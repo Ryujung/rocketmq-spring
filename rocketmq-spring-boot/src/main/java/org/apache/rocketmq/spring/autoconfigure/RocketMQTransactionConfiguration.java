@@ -37,6 +37,9 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * 事务配置类，在{@link RocketMQAutoConfiguration}之后进行配置
+ */
 @Configuration
 public class RocketMQTransactionConfiguration implements ApplicationContextAware, SmartInitializingSingleton {
 
@@ -44,11 +47,21 @@ public class RocketMQTransactionConfiguration implements ApplicationContextAware
 
     private ConfigurableApplicationContext applicationContext;
 
+    /**
+     * {@link ApplicationContextAware}接口获取容器
+     *
+     * @param applicationContext spring容器
+     */
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = (ConfigurableApplicationContext) applicationContext;
     }
 
+    /**
+     * {@link SmartInitializingSingleton}接口,单例对象初始化回调,获取事务监听的单例bean
+     * {@link ScopedProxyUtils#isScopedTarget(String)}方法用于检查给定的beanName是否是引用作用域代理的目标bean的名称。
+     * 获取带有事务监听注解，且不是代理作用域的单例对象，注册为
+     */
     @Override
     public void afterSingletonsInstantiated() {
         Map<String, Object> beans = this.applicationContext.getBeansWithAnnotation(RocketMQTransactionListener.class)
@@ -59,18 +72,23 @@ public class RocketMQTransactionConfiguration implements ApplicationContextAware
     }
 
     private void registerTransactionListener(String beanName, Object bean) {
+        // 获取最终目标类的Class对象
         Class<?> clazz = AopProxyUtils.ultimateTargetClass(bean);
 
+        // 如果不是{@link RocketMQLocalTransactionListener}接口的实现类,抛出非法状态异常
         if (!RocketMQLocalTransactionListener.class.isAssignableFrom(bean.getClass())) {
             throw new IllegalStateException(clazz + " is not instance of " + RocketMQLocalTransactionListener.class.getName());
         }
+        // 一个TransactionMQProducer实例只能注册一个事务监听器
         RocketMQTransactionListener annotation = clazz.getAnnotation(RocketMQTransactionListener.class);
         RocketMQTemplate rocketMQTemplate = (RocketMQTemplate) applicationContext.getBean(annotation.rocketMQTemplateBeanName());
         if (((TransactionMQProducer) rocketMQTemplate.getProducer()).getTransactionListener() != null) {
             throw new IllegalStateException(annotation.rocketMQTemplateBeanName() + " already exists RocketMQLocalTransactionListener");
         }
+        // 根据注解设置TransactionMQProducer的线程池核心参数
         ((TransactionMQProducer) rocketMQTemplate.getProducer()).setExecutorService(new ThreadPoolExecutor(annotation.corePoolSize(), annotation.maximumPoolSize(),
             annotation.keepAliveTime(), annotation.keepAliveTimeUnit(), new LinkedBlockingDeque<>(annotation.blockingQueueSize())));
+        // 设置事务监听器并打印日志
         ((TransactionMQProducer) rocketMQTemplate.getProducer()).setTransactionListener(RocketMQUtil.convert((RocketMQLocalTransactionListener) bean));
         log.debug("RocketMQLocalTransactionListener {} register to {} success", clazz.getName(), annotation.rocketMQTemplateBeanName());
     }

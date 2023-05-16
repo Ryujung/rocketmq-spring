@@ -23,11 +23,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * rocketmq前缀配置类
+ */
 @SuppressWarnings("WeakerAccess")
 @ConfigurationProperties(prefix = "rocketmq")
 public class RocketMQProperties {
 
     /**
+     * NameSrv地址+端口号
+     *
      * The name server for rocketMQ, formats: `host:port;host:port`.
      */
     private String nameServer;
@@ -99,6 +104,8 @@ public class RocketMQProperties {
     public static class Producer {
 
         /**
+         * 生产者组，服务端5.x版本开始，生产者是匿名的，无需管理生产者分组
+         *
          * Group name of producer.
          */
         private String group;

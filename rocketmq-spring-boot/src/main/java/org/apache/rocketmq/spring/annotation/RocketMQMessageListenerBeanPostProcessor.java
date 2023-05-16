@@ -45,6 +45,9 @@ public class RocketMQMessageListenerBeanPostProcessor implements ApplicationCont
         return bean;
     }
 
+    /**
+     * 当bean初始化之后，对标有监听器注解的bean进行增强
+     */
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Class<?> targetClass = AopUtils.getTargetClass(bean);
@@ -63,6 +66,9 @@ public class RocketMQMessageListenerBeanPostProcessor implements ApplicationCont
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * {@link InitializingBean}接口实现，会在属性注入、Aware接口调用后、@PostConstruct调用前
+     */
     @Override
     public void afterPropertiesSet() throws Exception {
         buildEnhancer();
@@ -71,13 +77,17 @@ public class RocketMQMessageListenerBeanPostProcessor implements ApplicationCont
 
     private void buildEnhancer() {
         if (this.applicationContext != null) {
+            // 获取所有AnnotationEnhancer接口类型的bean组成的Map<String,T>
             Map<String, AnnotationEnhancer> enhancersMap =
                     this.applicationContext.getBeansOfType(AnnotationEnhancer.class, false, false);
             if (enhancersMap.size() > 0) {
+                // 将所有的bean根据order顺序存入一个有序列表中
                 List<AnnotationEnhancer> enhancers = enhancersMap.values()
                         .stream()
                         .sorted(new OrderComparator())
                         .collect(Collectors.toList());
+
+                //依次对每个bean,执行所有的增强方法
                 this.enhancer = (attrs, element) -> {
                     Map<String, Object> newAttrs = attrs;
                     for (AnnotationEnhancer enh : enhancers) {
@@ -89,6 +99,11 @@ public class RocketMQMessageListenerBeanPostProcessor implements ApplicationCont
         }
     }
 
+    /**
+     * 根据是否存在注解增强器，对 RocketMQ 监听器的注解进行增强。
+     * 如果存在注解增强器，则将注解的属性进行增强，并返回一个增强后的注解对象；
+     * 如果不存在注解增强器，则返回原始的注解对象。
+     */
     private RocketMQMessageListener enhance(AnnotatedElement element, RocketMQMessageListener ann) {
         if (this.enhancer == null) {
             return ann;

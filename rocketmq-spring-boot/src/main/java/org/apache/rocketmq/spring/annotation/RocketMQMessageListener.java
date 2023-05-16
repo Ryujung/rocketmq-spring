@@ -36,6 +36,11 @@ public @interface RocketMQMessageListener {
     String ACCESS_CHANNEL_PLACEHOLDER = "${rocketmq.access-channel:}";
 
     /**
+     * 消费组名称，同组内的消费者的消费逻辑必须相同，必填且全局唯一
+     *
+     * Apache RocketMQ 是按照消费者分组粒度管理订阅关系，因此，同一消费者分组内的消费者在消费逻辑上必须保持一致，
+     * 否则会出现消费冲突，导致部分消息消费异常。
+     *
      * Consumers of the same role is required to have exactly same subscriptions and consumerGroup to correctly achieve
      * load balance. It's required and needs to be globally unique.
      *
@@ -45,11 +50,15 @@ public @interface RocketMQMessageListener {
     String consumerGroup();
 
     /**
+     * 消费主题
+     *
      * Topic name.
      */
     String topic();
 
     /**
+     * 消息过滤模式，支持Tag标签过滤和SQL属性过滤，默认为tag标签过滤，这两种过滤方式
+     *
      * Control how to selector message.
      *
      * @see SelectorType
@@ -57,21 +66,29 @@ public @interface RocketMQMessageListener {
     SelectorType selectorType() default SelectorType.TAG;
 
     /**
+     * 过滤表达式，默认是不过滤，接收topic内所有类型的消息
+     *
      * Control which message can be select. Grammar please see {@link SelectorType#TAG} and {@link SelectorType#SQL92}
      */
     String selectorExpression() default "*";
 
     /**
+     * 消费模式，分为并发消费和顺序消费，默认为并发消费，性能更高
+     *
      * Control consume mode, you can choice receive message concurrently or orderly.
      */
     ConsumeMode consumeMode() default ConsumeMode.CONCURRENTLY;
 
     /**
-     * Control message mode, if you want all subscribers receive message all message, broadcasting is a good choice.
+     * 消息模式，分为集群模式和广播模式，默认为集群模式
+     *
+     * Control message mode, if you want all subscribers receive all message, broadcasting is a good choice.
      */
     MessageModel messageModel() default MessageModel.CLUSTERING;
 
     /**
+     * 消费者最大线程数
+     *
      * Max consumer thread number.
      * @deprecated This property is not work well, because the consumer thread pool executor use
      * {@link LinkedBlockingQueue} with default capacity bound (Integer.MAX_VALUE), use

@@ -52,8 +52,9 @@ import org.springframework.util.StringUtils;
 import javax.annotation.PostConstruct;
 
 @Configuration
-@EnableConfigurationProperties(RocketMQProperties.class)
+@EnableConfigurationProperties(RocketMQProperties.class) // 绑定RocketMQProperties配置对象
 @ConditionalOnClass({MQAdmin.class})
+// 缺少 name-server 属性时是否可以加载。如果为true，没有该配置属性时也会正常加载；反之则不会生效
 @ConditionalOnProperty(prefix = "rocketmq", value = "name-server", matchIfMissing = true)
 @Import({MessageConverterConfiguration.class, ListenerContainerConfiguration.class, ExtProducerResetConfiguration.class,
         ExtConsumerResetConfiguration.class, RocketMQTransactionConfiguration.class, RocketMQListenerConfiguration.class})

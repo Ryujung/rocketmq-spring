@@ -23,6 +23,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * 消息转换器，在RocketMQAutoConfiguration配置之前进行配置
+ *
  * @see RocketMQMessageConverter
  */
 @Configuration

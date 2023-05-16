@@ -40,15 +40,20 @@ public class RocketMQMessageConverter {
 
     static {
         ClassLoader classLoader = RocketMQMessageConverter.class.getClassLoader();
+        // 判断项目中是否存在jackson的依赖，如果存在将会进行延迟加载，返回true，如果不存在，返回false
         JACKSON_PRESENT =
             ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", classLoader) &&
                 ClassUtils.isPresent("com.fasterxml.jackson.core.JsonGenerator", classLoader);
+        // 判断项目中是否存在fastjson的依赖，如果存在将会进行延迟加载，返回true，如果不存在，返回false
         FASTJSON_PRESENT = ClassUtils.isPresent("com.alibaba.fastjson.JSON", classLoader) &&
             ClassUtils.isPresent("com.alibaba.fastjson.support.config.FastJsonConfig", classLoader);
     }
 
     private final CompositeMessageConverter messageConverter;
 
+    /**
+     * 根据依赖的序列化工具，初始化 CompositeMessageConverter
+     */
     public RocketMQMessageConverter() {
         List<MessageConverter> messageConverters = new ArrayList<>();
         ByteArrayMessageConverter byteArrayMessageConverter = new ByteArrayMessageConverter();

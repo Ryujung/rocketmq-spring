@@ -28,6 +28,12 @@ import org.springframework.core.type.AnnotationMetadata;
 @AutoConfigureAfter(RocketMQAutoConfiguration.class)
 public class RocketMQListenerConfiguration implements ImportBeanDefinitionRegistrar {
 
+    /**
+     * {@link ImportBeanDefinitionRegistrar}接口用于动态注册额外的 Bean 定义（Bean Definitions）到 Spring 容器中。
+     *
+     * 检查并注册RocketMQ监听器的后置处理器，从而
+     * @param registry
+     */
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         if (!registry.containsBeanDefinition(RocketMQMessageListenerBeanPostProcessor.class.getName())) {

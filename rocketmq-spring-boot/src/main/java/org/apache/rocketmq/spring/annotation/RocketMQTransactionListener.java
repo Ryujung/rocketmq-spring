@@ -33,6 +33,7 @@ import org.springframework.stereotype.Component;
  * <p>Note: The annotation is used only on RocketMQ client producer side, it can not be used
  * on consumer side.
  */
+// 作用在类和注解上
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -40,6 +41,8 @@ import org.springframework.stereotype.Component;
 public @interface RocketMQTransactionListener {
 
     /**
+     * 线程池参数：核心线程数
+     *
      * Set ExecutorService params -- corePoolSize
      */
     int corePoolSize() default 1;
@@ -50,6 +53,8 @@ public @interface RocketMQTransactionListener {
     int maximumPoolSize() default 1;
 
     /**
+     * 非核心线程数的最大空闲时间：60s
+     *
      * Set ExecutorService params -- keepAliveTime
      */
     long keepAliveTime() default 1000 * 60;
@@ -60,6 +65,8 @@ public @interface RocketMQTransactionListener {
     TimeUnit keepAliveTimeUnit() default TimeUnit.MILLISECONDS;
 
     /**
+     * 线程池队列容量
+     *
      * Set ExecutorService params -- blockingQueueSize
      */
     int blockingQueueSize() default 2000;
