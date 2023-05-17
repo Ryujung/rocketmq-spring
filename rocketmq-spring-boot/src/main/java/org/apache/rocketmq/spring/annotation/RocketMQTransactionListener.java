@@ -33,8 +33,7 @@ import org.springframework.stereotype.Component;
  * <p>Note: The annotation is used only on RocketMQ client producer side, it can not be used
  * on consumer side.
  */
-// 作用在类和注解上
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE}) // 作用在类和注解上
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Component

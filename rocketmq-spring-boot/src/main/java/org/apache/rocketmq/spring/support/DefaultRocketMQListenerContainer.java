@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Objects;
+
 import org.apache.rocketmq.client.AccessChannel;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.MessageSelector;
@@ -67,9 +68,22 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
+/**
+ * 用于管理 RocketMQ 消息监听器的注册、启动、停止和处理的监听器容器。
+ *
+ * 是一个监听器容器,它管理了一个或多个MessageListener实例。这个Container会负责MessageListener的生命周期管理,包括:
+ * - 启动所有MessageListener
+ * - 停止所有MessageListener
+ * - 重新启动MessageListener 当其突然异常退出时
+ *
+ * Container会保证其内部管理的所有MessageListener均处于运行状态,
+ * 这为上层应用提供了便利,无需自行管理MessageListener的生命周期。
+ *
+ * 采用了Facade模式,它隐藏了内部多个MessageListener的细节,对外提供统一的管理接口。
+ */
 @SuppressWarnings("WeakerAccess")
 public class DefaultRocketMQListenerContainer implements InitializingBean,
-    RocketMQListenerContainer, SmartLifecycle, ApplicationContextAware {
+        RocketMQListenerContainer, SmartLifecycle, ApplicationContextAware {
     private final static Logger log = LoggerFactory.getLogger(DefaultRocketMQListenerContainer.class);
 
     private ApplicationContext applicationContext;
@@ -333,6 +347,9 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
         callback.run();
     }
 
+    /**
+     * spring组件生命周期接口方法，用于启动当前组件
+     */
     @Override
     public void start() {
         if (this.isRunning()) {
@@ -359,6 +376,9 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
         }
     }
 
+    /**
+     * 返回一个布尔值，指示组件当前是否正在运行中。
+     */
     @Override
     public boolean isRunning() {
         return running;
@@ -368,6 +388,10 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
         this.running = running;
     }
 
+    /**
+     * 返回一个整数值，表示组件的启动和停止顺序。
+     * 在容器启动过程中，按照 getPhase() 方法的返回值从小到大的顺序启动组件，容器关闭过程中则按相反的顺序停止组件。
+     */
     @Override
     public int getPhase() {
         // Returning Integer.MAX_VALUE only suggests that
@@ -392,17 +416,17 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
     @Override
     public String toString() {
         return "DefaultRocketMQListenerContainer{" +
-            "consumerGroup='" + consumerGroup + '\'' +
-            ", namespace='" + namespace + '\'' +
-            ", nameServer='" + nameServer + '\'' +
-            ", topic='" + topic + '\'' +
-            ", consumeMode=" + consumeMode +
-            ", selectorType=" + selectorType +
-            ", selectorExpression='" + selectorExpression + '\'' +
-            ", messageModel=" + messageModel + '\'' +
-            ", tlsEnable=" + tlsEnable +
-            ", instanceName=" + instanceName +
-            '}';
+                "consumerGroup='" + consumerGroup + '\'' +
+                ", namespace='" + namespace + '\'' +
+                ", nameServer='" + nameServer + '\'' +
+                ", topic='" + topic + '\'' +
+                ", consumeMode=" + consumeMode +
+                ", selectorType=" + selectorType +
+                ", selectorExpression='" + selectorExpression + '\'' +
+                ", messageModel=" + messageModel + '\'' +
+                ", tlsEnable=" + tlsEnable +
+                ", instanceName=" + instanceName +
+                '}';
     }
 
     public void setName(String name) {
@@ -456,7 +480,7 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
     }
 
     private void handleMessage(
-        MessageExt messageExt) throws MQClientException, RemotingException, InterruptedException {
+            MessageExt messageExt) throws MQClientException, RemotingException, InterruptedException {
         if (rocketMQListener != null) {
             rocketMQListener.onMessage(doConvertMessage(messageExt));
         } else if (rocketMQReplyListener != null) {
@@ -467,7 +491,8 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
             DefaultMQProducer producer = consumer.getDefaultMQPushConsumerImpl().getmQClientFactory().getDefaultMQProducer();
             producer.setSendMsgTimeout(replyTimeout);
             producer.send(replyMessage, new SendCallback() {
-                @Override public void onSuccess(SendResult sendResult) {
+                @Override
+                public void onSuccess(SendResult sendResult) {
                     if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
                         log.error("Consumer replies message failed. SendStatus: {}", sendResult.getSendStatus());
                     } else {
@@ -475,7 +500,8 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
                     }
                 }
 
-                @Override public void onException(Throwable e) {
+                @Override
+                public void onException(Throwable e) {
                     log.error("Consumer replies message failed. error: {}", e.getLocalizedMessage());
                 }
             });
@@ -498,8 +524,8 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
                 String jsonObj = (String) this.messageConverter.fromMessage(messageWithSerializedPayload, payloadObj.getClass());
                 if (null == jsonObj) {
                     throw new RuntimeException(String.format(
-                        "empty after conversion [messageConverter:%s,payloadClass:%s,payloadObj:%s]",
-                        this.messageConverter.getClass(), payloadObj.getClass(), payloadObj));
+                            "empty after conversion [messageConverter:%s,payloadClass:%s,payloadObj:%s]",
+                            this.messageConverter.getClass(), payloadObj.getClass(), payloadObj));
                 }
                 payloads = jsonObj.getBytes(Charset.forName(charset));
             }
@@ -511,13 +537,13 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
 
     private Message<?> doConvert(Object payload, MessageHeaders headers) {
         Message<?> message = this.messageConverter instanceof SmartMessageConverter ?
-            ((SmartMessageConverter) this.messageConverter).toMessage(payload, headers, null) :
-            this.messageConverter.toMessage(payload, headers);
+                ((SmartMessageConverter) this.messageConverter).toMessage(payload, headers, null) :
+                this.messageConverter.toMessage(payload, headers);
         if (message == null) {
             String payloadType = payload.getClass().getName();
             Object contentType = headers != null ? headers.get(MessageHeaders.CONTENT_TYPE) : null;
             throw new MessageConversionException("Unable to convert payload with type='" + payloadType +
-                "', contentType='" + contentType + "', converter=[" + this.messageConverter + "]");
+                    "', contentType='" + contentType + "', converter=[" + this.messageConverter + "]");
         }
         MessageBuilder<?> builder = MessageBuilder.fromMessage(message);
         builder.setHeaderIfAbsent(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN);
@@ -589,7 +615,7 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
             if (Objects.nonNull(interfaces)) {
                 for (Type type : interfaces) {
                     if (type instanceof ParameterizedType &&
-                        (Objects.equals(((ParameterizedType) type).getRawType(), RocketMQListener.class) || Objects.equals(((ParameterizedType) type).getRawType(), RocketMQReplyListener.class))) {
+                            (Objects.equals(((ParameterizedType) type).getRawType(), RocketMQListener.class) || Objects.equals(((ParameterizedType) type).getRawType(), RocketMQReplyListener.class))) {
                         matchedGenericInterface = type;
                         break;
                     }
@@ -617,18 +643,18 @@ public class DefaultRocketMQListenerContainer implements InitializingBean,
         Assert.notNull(topic, "Property 'topic' is required");
 
         RPCHook rpcHook = RocketMQUtil.getRPCHookByAkSk(applicationContext.getEnvironment(),
-            this.rocketMQMessageListener.accessKey(), this.rocketMQMessageListener.secretKey());
+                this.rocketMQMessageListener.accessKey(), this.rocketMQMessageListener.secretKey());
         boolean enableMsgTrace = rocketMQMessageListener.enableMsgTrace();
         if (Objects.nonNull(rpcHook)) {
             consumer = new DefaultMQPushConsumer(consumerGroup, rpcHook, new AllocateMessageQueueAveragely(),
-                enableMsgTrace, this.applicationContext.getEnvironment().
-                resolveRequiredPlaceholders(this.rocketMQMessageListener.customizedTraceTopic()));
+                    enableMsgTrace, this.applicationContext.getEnvironment().
+                    resolveRequiredPlaceholders(this.rocketMQMessageListener.customizedTraceTopic()));
             consumer.setVipChannelEnabled(false);
         } else {
             log.debug("Access-key or secret-key not configure in " + this + ".");
             consumer = new DefaultMQPushConsumer(consumerGroup, enableMsgTrace,
-                this.applicationContext.getEnvironment().
-                    resolveRequiredPlaceholders(this.rocketMQMessageListener.customizedTraceTopic()));
+                    this.applicationContext.getEnvironment().
+                            resolveRequiredPlaceholders(this.rocketMQMessageListener.customizedTraceTopic()));
         }
         consumer.setNamespace(namespace);
 

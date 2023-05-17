@@ -63,8 +63,7 @@ import javax.annotation.PostConstruct;
 public class RocketMQAutoConfiguration implements ApplicationContextAware {
     private static final Logger log = LoggerFactory.getLogger(RocketMQAutoConfiguration.class);
 
-    public static final String ROCKETMQ_TEMPLATE_DEFAULT_GLOBAL_NAME =
-        "rocketMQTemplate";
+    public static final String ROCKETMQ_TEMPLATE_DEFAULT_GLOBAL_NAME = "rocketMQTemplate";
     public static final String PRODUCER_BEAN_NAME = "defaultMQProducer";
     public static final String CONSUMER_BEAN_NAME = "defaultLitePullConsumer";
 
@@ -78,6 +77,11 @@ public class RocketMQAutoConfiguration implements ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * 检查NameSrv是否有配置，如果没有，则会跳过rocketmq有关的对象注入配置
+     *
+     * Java初始化注解，在Aware接口、processor前置处理之后调用，InitializingBean之前调用
+     */
     @PostConstruct
     public void checkProperties() {
         String nameServer = environment.getProperty("rocketmq.name-server", String.class);

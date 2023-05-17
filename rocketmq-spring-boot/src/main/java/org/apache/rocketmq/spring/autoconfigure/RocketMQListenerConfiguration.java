@@ -24,6 +24,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
 
+/**
+ * 实现ImportBeanDefinitionRegistrar接口的类可以拥有动态注册bean的能力
+ */
 @Configuration
 @AutoConfigureAfter(RocketMQAutoConfiguration.class)
 public class RocketMQListenerConfiguration implements ImportBeanDefinitionRegistrar {
